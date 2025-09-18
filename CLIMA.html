@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão do Tempo - INMET</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        header {
+            background: #1a2980;
+            color: white;
+            text-align: center;
+            padding: 25px 0;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        select, button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        select {
+            background: white;
+            border: 2px solid #1a2980;
+            min-width: 200px;
+        }
+        
+        button {
+            background: #1a2980;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: #152567;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            display: none;
+            color: #1a2980;
+        }
+        
+        .weather-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .weather-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .weather-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .weather-icon {
+            font-size: 2.5rem;
+            color: #1a2980;
+        }
+        
+        .weather-card h3 {
+            color: #1a2980;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f8ff;
+            padding-bottom: 10px;
+        }
+        
+        .weather-item {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .weather-value {
+            font-weight: bold;
+            color: #1a2980;
+        }
+        
+        .error-message {
+            background: #ffe6e6;
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            select, button {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h1>
+            <p>Dados do Instituto Nacional de Meteorologia (INMET)</p>
+        </header>
+        
+        <div class="content">
+            <div class="controls">
+                <select id="citySelect">
+                    <option value="">Selecione uma cidade</option>
+                    <option value="BRASILIA">Brasília</option>
+                    <option value="SAO PAULO">São Paulo</option>
+                    <option value="RIO DE JANEIRO">Rio de Janeiro</option>
+                    <option value="BELO HORIZONTE">Belo Horizonte</option>
+                    <option value="SALVADOR">Salvador</option>
+                    <option value="FORTALEZA">Fortaleza</option>
+                    <option value="CURITIBA">Curitiba</option>
+                    <option value="PORTO ALEGRE">Porto Alegre</option>
+                    <option value="RECIFE">Recife</option>
+                    <option value="MANAUS">Manaus</option>
+	            <option value="BARRA DO CORDA">Barra do Corda</option>
+		    <option value="LONDRES">Londres</option>
+
+
+                </select>
+                <button id="loadWeather">
+                    <i class="fas fa-search"></i> Buscar Previsão
+                </button>
+            </div>
+            
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Carregando dados meteorológicos...
+            </div>
+            
+            <div id="weather-container" class="weather-container">
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <i class="fas fa-info-circle weather-icon"></i>
+                        <h3>Como usar</h3>
+                    </div>
+                    <p>Selecione uma cidade no menu acima e clique em "Buscar Previsão" para ver os dados meteorológicos.</p>
+                </div>
+                
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <i class="fas fa-temperature-high weather-icon"></i>
+                        <h3>Sobre o INMET</h3>
+                    </div>
+                    <p>O Instituto Nacional de Meteorologia fornece dados oficiais sobre previsão do tempo e condições climáticas em todo o Brasil.</p>
+                </div>
+                
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <i class="fas fa-database weather-icon"></i>
+                        <h3>Dados Disponíveis</h3>
+                    </div>
+                    <p>Temperatura, umidade, velocidade do vento, pressão atmosférica e condições do tempo.</p>
+                </div>
+            </div>
+            
+            <footer>
+                <p>Dados fornecidos pelo Instituto Nacional de Meteorologia (INMET)</p>
+                <p>Exemplo educativo de integração com API pública</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadButton = document.getElementById('loadWeather');
+            const citySelect = document.getElementById('citySelect');
+            const weatherContainer = document.getElementById('weather-container');
+            const loading = document.getElementById('loading');
+            
+            // Mapeamento de íones para condições do tempo
+            const weatherIcons = {
+                'clear': 'fa-sun',
+                'cloudy': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'storm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'wind': 'fa-wind',
+                'default': 'fa-cloud'
+            };
+            
+            // Carregar dados ao clicar no botão
+            loadButton.addEventListener('click', fetchWeatherData);
+            
+            function fetchWeatherData() {
+                const cityCode = citySelect.value;
+                
+                if (!cityCode) {
+                    alert('Por favor, selecione uma cidade.');
+                    return;
+                }
+                
+                loading.style.display = 'block';
+                loadButton.disabled = true;
+                
+                // Nota: A API pública do INMET tem algumas limitações de acesso via browser (CORS)
+                // Em produção, você precisaria de um proxy ou backend para acessar os dados
+                
+                // Simulação de dados da API do INMET
+                setTimeout(() => {
+                    // Dados simulados para demonstração
+                    const weatherData = {
+                        city: citySelect.options[citySelect.selectedIndex].text,
+                        temperature: Math.round(20 + Math.random() * 15), // Entre 20 e 35
+                        humidity: Math.round(40 + Math.random() * 40), // Entre 40 e 80
+                        windSpeed: Math.round(5 + Math.random() * 15), // Entre 5 e 20 km/h
+                        pressure: Math.round(1000 + Math.random() * 20), // Entre 1000 e 1020
+                        condition: ['clear', 'cloudy', 'rain', 'storm'][Math.floor(Math.random() * 4)]
+                    };
+                    
+                    displayWeatherData(weatherData);
+                    
+                    loading.style.display = 'none';
+                    loadButton.disabled = false;
+                }, 1500);
+                
+                // Código para usar com a API real (caso esteja disponível e sem restrições CORS)
+                /*
+                fetch(`https://apiprevmet3.inmet.gov.br/previsao/${cityCode}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erro ao carregar dados do INMET');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displayWeatherData(data);
+                    })
+                    .catch(error => {
+                        weatherContainer.innerHTML = `
+                            <div class="error-message">
+                                <h3><i class="fas fa-exclamation-triangle"></i> Erro</h3>
+                                <p>${error.message}</p>
+                                <p>Verifique sua conexão com a internet e tente novamente.</p>
+                            </div>
+                        `;
+                    })
+                    .finally(() => {
+                        loading.style.display = 'none';
+                        loadButton.disabled = false;
+                    });
+                */
+            }
+            
+            function displayWeatherData(data) {
+                const conditionText = {
+                    'clear': 'Céu limpo',
+                    'cloudy': 'Nublado',
+                    'rain': 'Chuvoso',
+                    'storm': 'Tempestade'
+                };
+                
+                const iconClass = weatherIcons[data.condition] || weatherIcons['default'];
+                
+                weatherContainer.innerHTML = `
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <i class="fas ${iconClass} weather-icon"></i>
+                            <h3>${data.city}</h3>
+                        </div>
+                        <div class="weather-item">
+                            <span>Temperatura:</span>
+                            <span class="weather-value">${data.temperature}°C</span>
+                        </div>
+                        <div class="weather-item">
+                            <span>Umidade:</span>
+                            <span class="weather-value">${data.humidity}%</span>
+                        </div>
+                        <div class="weather-item">
+                            <span>Vento:</span>
+                            <span class="weather-value">${data.windSpeed} km/h</span>
+                        </div>
+                        <div class="weather-item">
+                            <span>Pressão:</span>
+                            <span class="weather-value">${data.pressure} hPa</span>
+                        </div>
+                        <div class="weather-item">
+                            <span>Condição:</span>
+                            <span class="weather-value">${conditionText[data.condition]}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <i class="fas fa-info-circle weather-icon"></i>
+                            <h3>Informações</h3>
+                        </div>
+                        <p>Os dados meteorológicos são fornecidos pelo INMET (Instituto Nacional de Meteorologia).</p>
+                        <p>Esta é uma demonstração de como exibir dados de API em uma página web.</p>
+                    </div>
+                    
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <i class="fas fa-map-marker-alt weather-icon"></i>
+                            <h3>Próximas Previsões</h3>
+                        </div>
+                        <p>Em uma implementação real, aqui seriam exibidas as previsões para os próximos dias.</p>
+                        <p>A API do INMET fornece previsões para até 7 dias.</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
